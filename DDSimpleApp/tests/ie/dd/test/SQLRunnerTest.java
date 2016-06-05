@@ -56,7 +56,7 @@ public class SQLRunnerTest {
 	
 	@Test
 	public void testEditServer() {
-		String[] s = {"abc", server2.getId(), serversNewName}; //first argument is name of action, cl: edit id name
+		String[] s = {"editServer", server2.getId(), serversNewName}; //first argument is name of action, cl: edit id name
 		mainApp.editServer(s);
 		List<Server> servers = mainApp.listServers();
 		int index = servers.indexOf(server2);

@@ -59,10 +59,6 @@ public class MainApp {
 				String inp = in.nextLine().trim().replaceAll(" +", " ");;
 				String[] input = inp.split(" ");
 				String option = input[0];
-				System.out.println("input was : " + input[0] + "...");
-				for(int i=0, j=input.length; i<j; i++){
-					System.out.println("token : " + input[i]);
-				}
 
 				if ("help".equals(option)) {
 					showHelp();
