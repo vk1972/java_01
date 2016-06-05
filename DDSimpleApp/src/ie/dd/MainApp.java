@@ -41,8 +41,10 @@ public class MainApp {
 			decodedPath = getDecodedPath() ;
 	}
 
+	
+	
 	public static void main(String[] args)
-			throws ClassNotFoundException, SQLException, IOException, XMLStreamException {
+			throws ClassNotFoundException, IOException{
 
 		boolean running = true;
 		showHelp();
@@ -51,18 +53,18 @@ public class MainApp {
 		setLoggingToCwd();
 
 		Scanner in = new Scanner(System.in);
-		String option = null;
 		while (running) {
 			if (in.hasNextLine()) {
-				option = in.nextLine();
+				String[] input = in.nextLine().split(" ");
+				String option = input[0];
 
 				if ("help".equals(option)) {
 					showHelp();
 				} else if ("quit".equals(option)) {
 					running = false;
 				} else if ("countServers".equals(option)) {
-
-					// TODO implement...
+					mainApp.setDb();
+					mainApp.countServers();
 				} else if ("addServer".equalsIgnoreCase(option)) {
 					mainApp.setXML();
 					mainApp.setDb();
@@ -71,9 +73,13 @@ public class MainApp {
 					mainApp.setDb();
 					mainApp.listServers();
 				} else if ("deleteServer".equalsIgnoreCase(option)) {
-					// TODO implement...
+					mainApp.setDb();
+					System.out.println(input[1]);
+					mainApp.deleteServer(input);	
 				} else if ("editServer".equalsIgnoreCase(option)) {
-					// TODO implement...
+					mainApp.setDb();
+					System.out.println(input[1] + " : " + input[1]);
+					mainApp.editServer(input);
 				} else {
 					if (!"\\n".equals(option) && !"".equals(option)) {
 						System.out.println("Unknown option!");
@@ -85,6 +91,19 @@ public class MainApp {
 		in.close();
 	}
 
+	
+	
+	
+	//----------------------------------------
+	//-------APPLICATION CONTEXT--------------
+	// getMainApp
+	// getDecodedPath
+	// setDb
+	// setXML
+	// loadProperties
+	// setLoggingToCwd
+	
+	
 	private static MainApp getMainApp() {
 		if (mainApp == null)
 			mainApp = new MainApp();
@@ -100,7 +119,6 @@ public class MainApp {
 			logger.log(Level.INFO, "main.getDecodedPath", decodedPath);
 		} catch (UnsupportedEncodingException e) {
 			logger.log(Level.SEVERE, "main.getDecodedPath", e);
-			System.out.println(e.getMessage());
 		}
 		//System.out.println("cwd: " + decodedPath);
 		return decodedPath;
@@ -122,12 +140,12 @@ public class MainApp {
 		}
 	}
 
-	private void setXML() throws IOException {
+	public void setXML() throws IOException {
 
 		if (xmlConnection == null) {
 			loadProperties();
 			String xmlFile = props.getProperty("xmlFile");
-			xmlConnection = new XMLConnection(xmlFile);
+			xmlConnection = new XMLConnection(decodedPath + "/" + xmlFile);
 		}
 	}
 
@@ -141,7 +159,7 @@ public class MainApp {
 		}
 	}
 
-	private static void setLoggingToCwd() {
+	private static void setLoggingToCwd() throws IOException {
 		final LogManager logManager = LogManager.getLogManager();
 		try (final InputStream is = new FileInputStream(decodedPath + "/logging.properties");) {
 			logManager.readConfiguration(is);
@@ -151,22 +169,94 @@ public class MainApp {
 			logger.addHandler(fileHandler);
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "main.setLoggingToCwd", e);
-			System.out.println(e.getMessage());
+			System.out.println("setLoggingToCwd: " + e.getMessage());
+			throw e;
 		}
 	}
 
-	private static SQLRunner getSQLRunner() {
+	
+	
+	
+	//----------------------------------------
+	//-------WORKERS -------------------------
+	// getSQLRunner
+	// getXMLRunner	
+	
+	
+	public static SQLRunner getSQLRunner() {
 		if (sqlRunner == null)
 			sqlRunner = new SQLRunner();
 		return sqlRunner;
 	}
+	
+	public static DbConnection getDbConnection() {
+		return dbConnection;
+	}	
 
 	private static XMLRunner getXMLRunner() {
 		if (xmlRunner == null)
 			xmlRunner = new XMLRunner();
 		return xmlRunner;
 	}
+	
+	
+	
+	
+	
+	//-----------------------------------
+	//---------------ACTIONS-------------
+	//countServers
+	//addServers
+	//listServers
+	//deleteServer
+	//editServer
+	//showHelp
 
+	
+	public int countServers(){
+		SQLRunner sqlRunner = getSQLRunner();
+		int servers = sqlRunner.countServers(dbConnection);
+		if (sqlRunner.isError() || servers < 0) {
+			System.out.println("There was an error while accessing database.\nPlease check log file!");
+		} else {
+			if (servers == 1) {
+				System.out.println("There is only " + servers + " server in DB");
+			}else if (servers > 1) {
+				System.out.println("There are " + servers + " servers in DB");				
+			} else {
+				System.out.println("There are no servers persisted to database!");
+			}
+		}	
+		return servers;
+	}
+
+	public int addServers(){
+		XMLRunner xmlRunner = getXMLRunner();
+		SQLRunner sqlRunner = getSQLRunner();
+		List<Server> servers = xmlRunner.listServers(xmlConnection);
+		if (xmlRunner.isError()) {
+			System.out.println("There was an error while accessing xml files.\nPlease check log file!");
+		} else {
+			if (servers.size() > 0) {
+				for (Server s : servers) {
+					sqlRunner.insertServer(s, dbConnection);
+					if (sqlRunner.isError()) {
+						System.out.println("There was an error while accessing database.\nPlease check log file!");
+						break;
+					}
+				}
+				if (!sqlRunner.isError()) {
+					System.out.println(servers.size() + " servers were added to database!");
+				}
+			} else {
+				System.out.println("There is no servers defined in xml!");
+			}
+		}
+		
+		return servers.size();
+	}
+	
+	
 	public List<Server> listServers() {
 		SQLRunner sqlRunner = getSQLRunner();
 		List<Server> servers = sqlRunner.listServers(dbConnection);
@@ -182,27 +272,42 @@ public class MainApp {
 			}
 		}
 		return servers;
-	}
-
-	private void addServers() throws FileNotFoundException, XMLStreamException {
-		XMLRunner xmlRunner = getXMLRunner();
-		SQLRunner sqlRunner = getSQLRunner();
-		List<Server> servers = xmlRunner.listServers(xmlConnection);
-		if (xmlRunner.isError()) {
-			System.out.println("There was an error while accessing xml files.\nPlease check log file!");
-		} else {
-			if (servers.size() > 0) {
-				for (Server s : servers) {
-					sqlRunner.insertServer(s, dbConnection);
-					if (sqlRunner.isError()) {
-						System.out.println("There was an error while accessing database.\nPlease check log file!");
-					}
-				}
+	}	
+	
+	
+	public void deleteServer(String[] input){
+		if(input.length != 2){
+			System.out.println("Please correct input parameters and try again!");
+		}else{
+			int delete = sqlRunner.deleteServer(input[1], dbConnection);
+			if (sqlRunner.isError()) {
+				System.out.println("There was an error while accessing database.\nPlease check log file!");
 			} else {
-				System.out.println("There is no servers defined in xml!");
-			}
+				if (delete == 1) {
+					System.out.println("Server " + input[1] + " was deleted from DB!");
+				} else {
+					System.out.println("There is no server with id=" + input[1] + " in database!");
+				}
+			}			
 		}
-	}
+	}	
+	
+	public void editServer(String[] input){
+		if(input.length != 3){
+			System.out.println("Please correct input parameters and try again!");
+		}else{
+			int update = sqlRunner.updateServer(input[1], input[2], dbConnection);
+			if (sqlRunner.isError()) {
+				System.out.println("There was an error while accessing database.\nPlease check log file!");
+			} else {
+				if (update == 1) {
+					System.out.println("Server " + input[1] + " was updated in DB!");
+				} else {
+					System.out.println("There is no server with id=" + input[1] + " in database!");
+				}
+			}			
+		}
+	}	
 	
 	
 	private static void showHelp() {

@@ -32,7 +32,7 @@ public class XMLRunner {
 					servers.add(server);
 				}
 			} else {
-				Exception e = new Exception("Folder for xml definitions does not exists!");
+				Exception e = new Exception("Folder for xml definitions does not exists! (" + file.getAbsolutePath() + ")");
 				logger.log(Level.SEVERE, "xml.listServers", e);
 				System.out.println(e.getMessage());
 				error = true;

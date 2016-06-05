@@ -18,8 +18,9 @@ public class DbConnection {
 	}
 	
 	public Connection getConnection() throws SQLException {
-		Connection conn = DriverManager.getConnection(url, userName, password);
-		return conn;
+		Connection c = DriverManager.getConnection(url, userName, password);
+		c.setAutoCommit(false);
+		return c;
 	}
 	
 	public void setConnectionUser(String userName, String password) {
