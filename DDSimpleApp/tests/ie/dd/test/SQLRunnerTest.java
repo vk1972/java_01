@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +25,11 @@ public class SQLRunnerTest {
 		server1 = new Server("1", "MyServerName");
 		server2 = new Server("2", "MyAnotherServerName");
 	}
+	
+	 @After
+	 public void tearDown() {
+		 mainApp = null;
+	 }
 
 
 	@Test

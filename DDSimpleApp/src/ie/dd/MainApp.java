@@ -38,8 +38,14 @@ public class MainApp {
 	private static XMLRunner xmlRunner;
 	private static String decodedPath;
 	static {
-			decodedPath = getDecodedPath() ;
-	}
+		decodedPath = getDecodedPath() ;
+		String os =  System.getProperty("os.name");
+		if(os.toUpperCase().contains("WINDOWS") && decodedPath.startsWith("/")){
+			decodedPath = decodedPath.substring(1);
+		}
+		System.out.println("You are running application on: " + os);
+		System.out.println("in " + decodedPath + " folder!");
+}
 
 	
 	
