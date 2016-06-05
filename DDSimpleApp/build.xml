@@ -1,0 +1,150 @@
+<project>
+	<presetdef name="javac">
+		<javac includeantruntime="false" />
+	</presetdef>
+
+	<property name="app-jar" value="SimpleApp" />
+	<property name="main-class" value="ie.dd.MainApp" />
+	<property name="server-def-dir" value="server_definition" />
+	<property name="lib-dir" value="lib" />
+	<property name="build-dir" value="build" />
+	<property name="build-classes-dir" value="build/classes" />
+	<property name="build-jar-dir" value="build/DDSimpleApp" />
+	<property name="test-src-dir" value="tests" />
+	<property name="test-classes-dir" value="build/test/classes" />
+	
+	
+	<path id="application">
+		<fileset dir="${build-jar-dir}/${app-jar}.jar" includes="**/*.jar" />
+	</path>	
+	
+	<path id="tests-src">
+		<fileset dir="${test-src-dir}" />
+	</path>	
+	
+	<path id="tests-classes">
+		<fileset dir="${test-classes-dir}" />
+	</path>	
+	
+	<path id="classpath">
+		<fileset dir="lib" includes="**/*.jar" />
+	</path>
+	
+	<path id="app-src">
+		<fileset dir="src" includes="**/*.java" />
+	</path>	
+	
+	<path id="app-dir">
+		<fileset dir="${build-jar-dir}" includes="**/*.jar" />
+	</path>	
+	
+	<path id="application">
+		<fileset dir="${build-jar-dir}/${app-jar}.jar" includes="**/*.jar" />
+	</path>		
+	
+	<path id="properties">
+		<fileset dir="${basedir}" includes="**/*.properties" />
+	</path>
+	
+	<path id="junit-compile-ref">
+		<fileset dir="${build-jar-dir}" includes="**/*.jar" />
+	</path>
+	
+	<path id="build.classpath">
+	  <fileset dir="${basedir}">
+	     <include name="lib/*.jar"/>
+	  </fileset>
+	</path>
+
+	<pathconvert property="manifest.classpath" pathsep=" ">
+	  <path refid="build.classpath"/>
+	  <mapper>
+	    <chainedmapper>
+	       <flattenmapper/>
+	       <globmapper from="*.jar" to="lib/*.jar"/>
+	    </chainedmapper>
+	  </mapper>
+	</pathconvert>	
+
+	
+	
+	<target name="clean">
+		<delete dir="${build-dir}" />
+		<delete dir="report" />
+	</target>
+
+	
+	<target name="compile" depends="clean">
+		<mkdir dir="${build-classes-dir}" />
+		<javac srcdir="src" destdir="${build-classes-dir}" classpathref="classpath" debug="on" source="1.8" />
+	</target>
+
+
+	<target name="jar" depends="compile">
+		
+		<mkdir dir="${build-jar-dir}" />
+		<jar destfile="${build-jar-dir}/${app-jar}.jar" basedir="${build-classes-dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}" />
+				<attribute name="Class-Path" value="${manifest.classpath}" />
+			</manifest>
+		</jar>
+
+		
+		<mkdir dir="${build-jar-dir}/lib" />
+		<copy todir="${build-jar-dir}/lib">
+			<fileset dir="${basedir}/lib" includes="**/*.jar" />
+		</copy>
+
+		<mkdir dir="${build-jar-dir}/${server-def-dir}" />
+		<copy todir="${build-jar-dir}/${server-def-dir}">
+			<fileset dir="${basedir}/${server-def-dir}" includes="**/*.xml" />
+		</copy>
+
+		<copy todir="${build-jar-dir}">
+			<fileset dir="${basedir}" includes="**/*.properties" />
+		</copy>
+		
+		<mkdir dir="${build-jar-dir}/log" />
+	</target>
+
+
+	<target name="run">
+		<java fork="true" classname="${main-class}">
+			<classpath>
+				<path refid="classpath" />
+				<path refid="app-dir" />
+			</classpath>
+		</java>
+	</target>
+
+	
+	<target name="compile-tests" depends="jar">
+		<mkdir dir="${test-classes-dir}" />
+		<javac srcdir="${test-src-dir}" destdir="${test-classes-dir}" classpathref="junit-compile-ref" includeantruntime="false" debug="on" source="1.8"/>
+	</target>
+	
+	<target name="junit" depends="compile-tests">
+		<mkdir dir="report" />
+		<junit printsummary="no" haltonerror="yes">
+			<classpath>
+				<path refid="classpath" />
+				<path refid="app-dir" />
+				<pathelement location="${test-classes-dir}" />
+			</classpath>
+			<formatter type="plain" />
+			<batchtest fork="yes" todir="report">
+				<path refid="tests-src" />
+			</batchtest>
+		</junit>
+	</target>
+	
+	<target name="junitreport">
+		<junitreport todir="report">
+			<fileset dir="report" includes="TEST-*.txt" />
+			<report todir="report" />
+		</junitreport>
+	</target>
+
+	<!-- target name="main" depends="clean, compile, jar, junit, run"/ -->
+</project>
