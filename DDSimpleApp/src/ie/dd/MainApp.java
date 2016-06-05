@@ -78,7 +78,7 @@ public class MainApp {
 					mainApp.deleteServer(input);	
 				} else if ("editServer".equalsIgnoreCase(option)) {
 					mainApp.setDb();
-					System.out.println(input[1] + " : " + input[1]);
+					System.out.println(input[1] + " : " + input[2]);
 					mainApp.editServer(input);
 				} else {
 					if (!"\\n".equals(option) && !"".equals(option)) {
@@ -152,7 +152,7 @@ public class MainApp {
 	private static void loadProperties() throws IOException {
 		if (props == null) {
 			props = new Properties();
-			System.out.println(decodedPath + "/services.properties");
+			//System.out.println("loading: " + decodedPath + "/services.properties");
 			FileInputStream in = new FileInputStream(decodedPath + "/services.properties");
 			props.load(in);
 			in.close();
@@ -169,7 +169,7 @@ public class MainApp {
 			logger.addHandler(fileHandler);
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "main.setLoggingToCwd", e);
-			System.out.println("setLoggingToCwd: " + e.getMessage());
+			System.out.println("Err: setLoggingToCwd: " + e.getMessage());
 			throw e;
 		}
 	}
@@ -268,7 +268,7 @@ public class MainApp {
 					System.out.println(s.getId() + "\t" + s.getName());
 				}
 			} else {
-				System.out.println("There is no servers persisted to database!");
+				System.out.println("There are no servers persisted to database!");
 			}
 		}
 		return servers;
